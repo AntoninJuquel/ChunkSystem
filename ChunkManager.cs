@@ -36,9 +36,9 @@ namespace ChunkSystem
         {
             foreach (var chunkHandler in _chunkHandlers)
             {
-                onChunkCreated.AddListener(chunkHandler.ChunkCreated);
-                onChunkEnabled.AddListener(chunkHandler.ChunkEnabled);
-                onChunkDisabled.AddListener(chunkHandler.ChunkDisabled);
+                onChunkCreated.AddListener(chunkHandler.ChunkCreatedHandler);
+                onChunkEnabled.AddListener(chunkHandler.ChunkEnabledHandler);
+                onChunkDisabled.AddListener(chunkHandler.ChunkDisabledHandler);
             }
 
             foreach (var agent in _agents)
@@ -52,9 +52,9 @@ namespace ChunkSystem
         {
             foreach (var chunkHandler in _chunkHandlers)
             {
-                onChunkCreated.RemoveListener(chunkHandler.ChunkCreated);
-                onChunkEnabled.RemoveListener(chunkHandler.ChunkEnabled);
-                onChunkDisabled.RemoveListener(chunkHandler.ChunkDisabled);
+                onChunkCreated.RemoveListener(chunkHandler.ChunkCreatedHandler);
+                onChunkEnabled.RemoveListener(chunkHandler.ChunkEnabledHandler);
+                onChunkDisabled.RemoveListener(chunkHandler.ChunkDisabledHandler);
             }
 
             foreach (var agent in _agents)

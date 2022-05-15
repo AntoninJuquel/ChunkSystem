@@ -4,8 +4,8 @@ namespace ChunkSystem
 {
     public interface IChunkHandler
     {
-        void ChunkCreated(Vector2 position);
-        void ChunkDisabled(Vector2 position);
-        void ChunkEnabled(Vector2 position);
+        void ChunkCreatedHandler(Vector2 position);
+        void ChunkDisabledHandler(Vector2 position);
+        void ChunkEnabledHandler(Vector2 position);
     }
 }
