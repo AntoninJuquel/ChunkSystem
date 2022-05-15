@@ -11,9 +11,9 @@ namespace ChunkSystem
         public static ChunkManager Instance { get; private set; }
         public Vector2 chunkSize;
 
-        [SerializeField] private UnityEvent<Vector2> onChunkCreated;
-        [SerializeField] private UnityEvent<Vector2> onChunkEnabled;
-        [SerializeField] private UnityEvent<Vector2> onChunkDisabled;
+        [SerializeField] private UnityEvent<Bounds> onChunkCreated;
+        [SerializeField] private UnityEvent<Bounds> onChunkEnabled;
+        [SerializeField] private UnityEvent<Bounds> onChunkDisabled;
         private List<Chunk> _chunks = new();
         private List<ChunkAgent> _agents = new();
         private IEnumerable<IChunkHandler> _chunkHandlers;
@@ -29,7 +29,7 @@ namespace ChunkSystem
 
         private void Start()
         {
-            onChunkCreated?.Invoke(Vector2.zero);
+            onChunkCreated?.Invoke(_chunks[0].bounds);
         }
 
         private void OnEnable()
@@ -77,7 +77,7 @@ namespace ChunkSystem
         {
             var newChunk = new Chunk(position, chunkSize);
             _chunks.Add(newChunk);
-            onChunkCreated?.Invoke(position);
+            onChunkCreated?.Invoke(newChunk.bounds);
             return newChunk;
         }
 
@@ -85,7 +85,7 @@ namespace ChunkSystem
         {
             agent.Chunk.RemoveAgent(agent, out var chunkDisabled);
             if (chunkDisabled)
-                onChunkDisabled?.Invoke(agent.Chunk.Position);
+                onChunkDisabled?.Invoke(agent.Chunk.bounds);
         }
 
         private void AddAgentToChunk(ChunkAgent agent, Chunk chunk)
@@ -93,7 +93,7 @@ namespace ChunkSystem
             agent.Chunk = chunk;
             chunk.AddAgent(agent, out var chunkEnabled);
             if (chunkEnabled)
-                onChunkEnabled?.Invoke(agent.Chunk.Position);
+                onChunkEnabled?.Invoke(agent.Chunk.bounds);
         }
 
         private void OnAgentStateChanged(object sender, EventArgs args)

@@ -5,7 +5,7 @@ Reusable 2D chunk system in Unity
 Base chunk class with helper functions
 
 ### ChunkManager
-The ChunkManager triggers 3 events passing a Vector2 in arguments:
+The ChunkManager triggers 3 events passing a Bounds in arguments:
 - onChunkCreated
 - onChunkEnabled
 - onChunkDisabled
