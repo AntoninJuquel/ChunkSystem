@@ -28,6 +28,12 @@ namespace ChunkSystem
 
         private void Start()
         {
+            if (!ChunkManager.Instance)
+            {
+                Debug.LogWarning("ChunkAgent but no ChunkManager aborting...", gameObject);
+                return;
+            }
+
             ChunkManager.Instance.RegisterNewAgent(this);
         }
 
