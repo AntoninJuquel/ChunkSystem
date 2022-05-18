@@ -1,6 +1,6 @@
 {
     "name": "ChunkSystem",
-    "rootNamespace": "ChunkSystem",
+    "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
