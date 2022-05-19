@@ -16,7 +16,7 @@ namespace ChunkSystem
         [SerializeField] private UnityEvent<Bounds> onChunkDisabled;
         private List<Chunk> _chunks = new();
         private List<ChunkAgent> _agents = new();
-        private IEnumerable<IChunkHandler> _chunkHandlers;
+        private IEnumerable<IHandleChunk> _chunkHandlers;
 
         private void Awake()
         {
@@ -24,7 +24,7 @@ namespace ChunkSystem
             var newChunk = new Chunk(Vector2.zero, chunkSize);
             _chunks.Add(newChunk);
 
-            _chunkHandlers = FindObjectsOfType<MonoBehaviour>().OfType<IChunkHandler>();
+            _chunkHandlers = FindObjectsOfType<MonoBehaviour>().OfType<IHandleChunk>();
         }
 
         private void Start()

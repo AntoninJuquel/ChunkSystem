@@ -2,7 +2,7 @@
 
 namespace ChunkSystem
 {
-    public interface IChunkHandler
+    public interface IHandleChunk
     {
         void ChunkCreatedHandler(Bounds bounds);
         void ChunkDisabledHandler(Bounds bounds);
