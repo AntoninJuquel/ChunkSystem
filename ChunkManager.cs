@@ -27,7 +27,7 @@ namespace ChunkSystem
             _chunkHandlers = FindObjectsOfType<MonoBehaviour>().OfType<IHandleChunk>();
         }
 
-        private void Start()
+        private void OnChunkStart(object sender, EventArgs args)
         {
             onChunkCreated?.Invoke(_chunks[0].bounds);
         }
@@ -39,6 +39,7 @@ namespace ChunkSystem
                 onChunkCreated.AddListener(chunkHandler.ChunkCreatedHandler);
                 onChunkEnabled.AddListener(chunkHandler.ChunkEnabledHandler);
                 onChunkDisabled.AddListener(chunkHandler.ChunkDisabledHandler);
+                chunkHandler.OnChunkStart += OnChunkStart;
             }
 
             foreach (var agent in _agents)
@@ -55,6 +56,7 @@ namespace ChunkSystem
                 onChunkCreated.RemoveListener(chunkHandler.ChunkCreatedHandler);
                 onChunkEnabled.RemoveListener(chunkHandler.ChunkEnabledHandler);
                 onChunkDisabled.RemoveListener(chunkHandler.ChunkDisabledHandler);
+                chunkHandler.OnChunkStart -= OnChunkStart;
             }
 
             foreach (var agent in _agents)
