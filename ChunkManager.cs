@@ -21,15 +21,13 @@ namespace ChunkSystem
         private void Awake()
         {
             Instance = this;
-            var newChunk = new Chunk(Vector2.zero, chunkSize);
-            _chunks.Add(newChunk);
-
             _chunkHandlers = FindObjectsOfType<MonoBehaviour>().OfType<IHandleChunk>();
         }
 
         private void OnChunkStart(object sender, EventArgs args)
         {
-            onChunkCreated?.Invoke(_chunks[0].bounds);
+            _chunks = new List<Chunk>();
+            CreateChunkAt(Vector2.zero);
         }
 
         private void OnEnable()
