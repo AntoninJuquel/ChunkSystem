@@ -18,12 +18,12 @@ namespace ChunkSystem
             }
         }
 
-        public event EventHandler onStateChanged;
-        public event EventHandler onOutOfChunk;
+        public event Action<ChunkAgent> OnStateChanged;
+        public event Action<ChunkAgent> OnOutOfChunk;
 
         private void OnEnable()
         {
-            onStateChanged?.Invoke(this, default);
+            OnStateChanged?.Invoke(this);
         }
 
         private void Start()
@@ -39,13 +39,13 @@ namespace ChunkSystem
 
         private void OnDisable()
         {
-            onStateChanged?.Invoke(this, default);
+            OnStateChanged?.Invoke(this);
         }
 
         private IEnumerator CheckChunkBounds()
         {
             yield return new WaitWhile(() => _chunk.bounds.Contains(transform.position));
-            onOutOfChunk?.Invoke(this, default);
+            OnOutOfChunk?.Invoke(this);
         }
     }
 }

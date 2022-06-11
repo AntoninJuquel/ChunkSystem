@@ -42,8 +42,8 @@ namespace ChunkSystem
 
             foreach (var agent in _agents)
             {
-                agent.onStateChanged += OnAgentStateChanged;
-                agent.onOutOfChunk += OnAgentOutOfChunk;
+                agent.OnStateChanged += OnAgentStateChanged;
+                agent.OnOutOfChunk += OnAgentOutOfChunk;
             }
         }
 
@@ -59,8 +59,8 @@ namespace ChunkSystem
 
             foreach (var agent in _agents)
             {
-                agent.onStateChanged -= OnAgentStateChanged;
-                agent.onOutOfChunk -= OnAgentOutOfChunk;
+                agent.OnStateChanged -= OnAgentStateChanged;
+                agent.OnOutOfChunk -= OnAgentOutOfChunk;
             }
         }
 
@@ -96,10 +96,8 @@ namespace ChunkSystem
                 onChunkEnabled?.Invoke(agent.Chunk.bounds);
         }
 
-        private void OnAgentStateChanged(object sender, EventArgs args)
+        private void OnAgentStateChanged(ChunkAgent agent)
         {
-            if (sender is not ChunkAgent agent) return;
-
             if (agent.gameObject.activeSelf && agent.enabled)
             {
                 AddAgentToChunk(agent, agent.Chunk ?? _chunks[0]);
@@ -110,10 +108,8 @@ namespace ChunkSystem
             }
         }
 
-        private void OnAgentOutOfChunk(object sender, EventArgs args)
+        private void OnAgentOutOfChunk(ChunkAgent agent)
         {
-            if (sender is not ChunkAgent agent) return;
-
             RemoveAgentFromChunk(agent);
 
             var exit = (Vector2) agent.transform.position - agent.Chunk.Position;
@@ -149,8 +145,8 @@ namespace ChunkSystem
             if (_agents.Contains(agent)) return;
 
             _agents.Add(agent);
-            agent.onStateChanged += OnAgentStateChanged;
-            agent.onOutOfChunk += OnAgentOutOfChunk;
+            agent.OnStateChanged += OnAgentStateChanged;
+            agent.OnOutOfChunk += OnAgentOutOfChunk;
             AddAgentToChunk(agent, agent.Chunk ?? _chunks[0]);
         }
     }
