@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
@@ -24,12 +23,6 @@ namespace ChunkSystem
             _chunkHandlers = FindObjectsOfType<MonoBehaviour>().OfType<IHandleChunk>();
         }
 
-        private void OnChunkStart(object sender, EventArgs args)
-        {
-            _chunks = new List<Chunk>();
-            CreateChunkAt(Vector2.zero);
-        }
-
         private void OnEnable()
         {
             foreach (var chunkHandler in _chunkHandlers)
@@ -37,13 +30,13 @@ namespace ChunkSystem
                 onChunkCreated.AddListener(chunkHandler.ChunkCreatedHandler);
                 onChunkEnabled.AddListener(chunkHandler.ChunkEnabledHandler);
                 onChunkDisabled.AddListener(chunkHandler.ChunkDisabledHandler);
-                chunkHandler.OnChunkStart += OnChunkStart;
+                chunkHandler.ChunkStarted += OnChunkStarted;
             }
 
             foreach (var agent in _agents)
             {
-                agent.onStateChanged += OnAgentStateChanged;
-                agent.onOutOfChunk += OnAgentOutOfChunk;
+                agent.StateChanged += OnAgentStateChanged;
+                agent.OutOfChunk += OnAgentOutOfChunk;
             }
         }
 
@@ -54,13 +47,13 @@ namespace ChunkSystem
                 onChunkCreated.RemoveListener(chunkHandler.ChunkCreatedHandler);
                 onChunkEnabled.RemoveListener(chunkHandler.ChunkEnabledHandler);
                 onChunkDisabled.RemoveListener(chunkHandler.ChunkDisabledHandler);
-                chunkHandler.OnChunkStart -= OnChunkStart;
+                chunkHandler.ChunkStarted -= OnChunkStarted;
             }
 
             foreach (var agent in _agents)
             {
-                agent.onStateChanged -= OnAgentStateChanged;
-                agent.onOutOfChunk -= OnAgentOutOfChunk;
+                agent.StateChanged -= OnAgentStateChanged;
+                agent.OutOfChunk -= OnAgentOutOfChunk;
             }
         }
 
@@ -71,6 +64,12 @@ namespace ChunkSystem
                 Gizmos.color = chunk.Active ? Color.green : Color.red;
                 Gizmos.DrawWireCube(chunk.Position, chunkSize * (chunk.Active ? .9f : 1));
             }
+        }
+
+        private void OnChunkStarted(Vector2 position)
+        {
+            _chunks = new List<Chunk>();
+            CreateChunkAt(position);
         }
 
         private Chunk CreateChunkAt(Vector2 position)
@@ -96,10 +95,8 @@ namespace ChunkSystem
                 onChunkEnabled?.Invoke(agent.Chunk.bounds);
         }
 
-        private void OnAgentStateChanged(object sender, EventArgs args)
+        private void OnAgentStateChanged(ChunkAgent agent)
         {
-            if (sender is not ChunkAgent agent) return;
-
             if (agent.gameObject.activeSelf && agent.enabled)
             {
                 AddAgentToChunk(agent, agent.Chunk ?? _chunks[0]);
@@ -110,10 +107,8 @@ namespace ChunkSystem
             }
         }
 
-        private void OnAgentOutOfChunk(object sender, EventArgs args)
+        private void OnAgentOutOfChunk(ChunkAgent agent)
         {
-            if (sender is not ChunkAgent agent) return;
-
             RemoveAgentFromChunk(agent);
 
             var exit = (Vector2) agent.transform.position - agent.Chunk.Position;
@@ -149,8 +144,8 @@ namespace ChunkSystem
             if (_agents.Contains(agent)) return;
 
             _agents.Add(agent);
-            agent.onStateChanged += OnAgentStateChanged;
-            agent.onOutOfChunk += OnAgentOutOfChunk;
+            agent.StateChanged += OnAgentStateChanged;
+            agent.OutOfChunk += OnAgentOutOfChunk;
             AddAgentToChunk(agent, agent.Chunk ?? _chunks[0]);
         }
     }

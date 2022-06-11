@@ -6,6 +6,9 @@ namespace ChunkSystem
 {
     public class ChunkAgent : MonoBehaviour
     {
+        public event Action<ChunkAgent> StateChanged;
+        public event Action<ChunkAgent> OutOfChunk;
+
         private Chunk _chunk;
 
         public Chunk Chunk
@@ -18,12 +21,11 @@ namespace ChunkSystem
             }
         }
 
-        public event EventHandler onStateChanged;
-        public event EventHandler onOutOfChunk;
+        private WaitWhile WaitWhileInChunk => new(() => _chunk.bounds.Contains(transform.position));
 
         private void OnEnable()
         {
-            onStateChanged?.Invoke(this, default);
+            StateChanged?.Invoke(this);
         }
 
         private void Start()
@@ -39,13 +41,13 @@ namespace ChunkSystem
 
         private void OnDisable()
         {
-            onStateChanged?.Invoke(this, default);
+            StateChanged?.Invoke(this);
         }
 
         private IEnumerator CheckChunkBounds()
         {
-            yield return new WaitWhile(() => _chunk.bounds.Contains(transform.position));
-            onOutOfChunk?.Invoke(this, default);
+            yield return WaitWhileInChunk;
+            OutOfChunk?.Invoke(this);
         }
     }
 }
