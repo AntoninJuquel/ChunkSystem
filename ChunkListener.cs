@@ -7,6 +7,38 @@ namespace ChunkSystem
     {
         [SerializeField] private UnityEvent<Bounds> onChunkCreated, onChunkEnabled, onChunkDisabled;
 
+        private void OnEnable()
+        {
+            if (ChunkManager.Instance)
+            {
+                ChunkManager.Instance.AddChunkListener(this);
+            }
+        }
+
+        private void Start()
+        {
+            if (ChunkManager.Instance)
+            {
+                ChunkManager.Instance.AddChunkListener(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (ChunkManager.Instance)
+            {
+                ChunkManager.Instance.RemoveChunkListener(this);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (ChunkManager.Instance)
+            {
+                ChunkManager.Instance.RemoveChunkListener(this);
+            }
+        }
+
         public void ChunkCreatedHandler(Bounds bounds)
         {
             onChunkCreated?.Invoke(bounds);

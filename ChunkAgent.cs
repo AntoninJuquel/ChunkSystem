@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace ChunkSystem
 {
     public class ChunkAgent : MonoBehaviour
     {
-        public event Action<ChunkAgent> StateChanged;
-        public event Action<ChunkAgent> OutOfChunk;
-
         private Chunk _chunk;
 
         public Chunk Chunk
@@ -17,15 +13,21 @@ namespace ChunkSystem
             set
             {
                 _chunk = value;
+                StopAllCoroutines();
                 StartCoroutine(CheckChunkBounds());
             }
         }
 
-        private WaitWhile WaitWhileInChunk => new(() => _chunk.bounds.Contains(transform.position));
+        private WaitWhile WaitWhileInChunk => new(() => _chunk.Bounds.Contains(transform.position));
 
         private void OnEnable()
         {
-            StateChanged?.Invoke(this);
+            if (!ChunkManager.Instance)
+            {
+                return;
+            }
+
+            ChunkManager.Instance.AgentEnabledStateChanged(this);
         }
 
         private void Start()
@@ -36,12 +38,17 @@ namespace ChunkSystem
                 return;
             }
 
-            ChunkManager.Instance.RegisterNewAgent(this);
+            ChunkManager.Instance.AgentStarted(this);
         }
 
         private void OnDisable()
         {
-            StateChanged?.Invoke(this);
+            if (!ChunkManager.Instance)
+            {
+                return;
+            }
+
+            ChunkManager.Instance.AgentEnabledStateChanged(this);
         }
 
         private void OnDestroy()
@@ -51,13 +58,13 @@ namespace ChunkSystem
                 return;
             }
 
-            ChunkManager.Instance.UnRegisterAgent(this);
+            ChunkManager.Instance.AgentDestroyed(this);
         }
 
         private IEnumerator CheckChunkBounds()
         {
             yield return WaitWhileInChunk;
-            OutOfChunk?.Invoke(this);
+            ChunkManager.Instance.AgentOutOfChunk(this);
         }
     }
 }

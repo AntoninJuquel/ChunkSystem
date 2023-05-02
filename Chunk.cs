@@ -3,31 +3,31 @@ using UnityEngine;
 
 namespace ChunkSystem
 {
-    [System.Serializable]
     public class Chunk
     {
-        public List<ChunkAgent> agents;
-        public Bounds bounds;
-        public bool Active => agents.Count > 0;
-        public Vector3 Position => bounds.center;
+        public Bounds Bounds { get; }
+
+        public HashSet<ChunkAgent> Agents { get; private set; }
+        public bool Active => Agents.Count > 0;
+        public Vector3 Position => Bounds.center;
 
         public Chunk(Vector3 position, Vector3 size)
         {
-            agents = new List<ChunkAgent>();
-            bounds = new Bounds(position, size);
+            Agents = new HashSet<ChunkAgent>();
+            Bounds = new Bounds(position, size);
         }
 
         public void AddAgent(ChunkAgent agent, out bool enabled)
         {
-            agents ??= new List<ChunkAgent>();
-            agents.Add(agent);
-            enabled = agents.Count != 0;
+            Agents ??= new HashSet<ChunkAgent>();
+            Agents.Add(agent);
+            enabled = Agents.Count == 1;
         }
 
         public void RemoveAgent(ChunkAgent agent, out bool disabled)
         {
-            agents.Remove(agent);
-            disabled = agents.Count == 0;
+            Agents.Remove(agent);
+            disabled = Agents.Count == 0;
         }
     }
 
@@ -40,6 +40,28 @@ namespace ChunkSystem
                 Random.Range(bounds.min.y, bounds.max.y),
                 Random.Range(bounds.min.z, bounds.max.z)
             );
+        }
+
+        public static Vector3 GetExitFace(this Bounds bounds, Vector3 point)
+        {
+            var closestPoint = bounds.ClosestPoint(point);
+            var direction = point - closestPoint;
+            var xDistance = Mathf.Abs(direction.x);
+            var yDistance = Mathf.Abs(direction.y);
+            var zDistance = Mathf.Abs(direction.z);
+            var maxDistance = Mathf.Max(xDistance, yDistance, zDistance);
+            if (maxDistance == xDistance)
+            {
+                return (direction.x > 0) ? Vector3.right : Vector3.left;
+            }
+            else if (maxDistance == yDistance)
+            {
+                return (direction.y > 0) ? Vector3.up : Vector3.down;
+            }
+            else
+            {
+                return (direction.z > 0) ? Vector3.forward : Vector3.back;
+            }
         }
     }
 }

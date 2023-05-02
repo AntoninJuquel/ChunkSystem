@@ -10,19 +10,34 @@ namespace ChunkSystem
         public static ChunkManager Instance { get; private set; }
         [SerializeField] private Vector3 chunkSize;
         [SerializeField] private bool initializeOnStart;
-        [SerializeField] private UnityEvent<Bounds> onChunkCreated;
-        [SerializeField] private UnityEvent<Bounds> onChunkEnabled;
-        [SerializeField] private UnityEvent<Bounds> onChunkDisabled;
+        [SerializeField] private UnityEvent<Bounds> onChunkCreated, onChunkEnabled, onChunkDisabled;
 
-        private bool IsActive => _chunks.Count > 0;
-        private List<Chunk> _chunks = new();
-        private List<ChunkAgent> _agents = new();
-        private List<IListenChunk> _chunkListeners;
+        private bool IsActive => Chunks.Count > 0;
+        public HashSet<Chunk> Chunks { get; } = new();
+        public HashSet<ChunkAgent> Agents { get; } = new();
+        public HashSet<IListenChunk> ChunkListeners { get; } = new();
 
         private void Awake()
         {
             Instance = this;
-            _chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>().ToList();
+        }
+
+        private void OnEnable()
+        {
+            var chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>();
+            foreach (var chunkListener in chunkListeners)
+            {
+                AddChunkListener(chunkListener);
+            }
+        }
+
+        private void OnDisable()
+        {
+            var chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>();
+            foreach (var chunkListener in chunkListeners)
+            {
+                RemoveChunkListener(chunkListener);
+            }
         }
 
         private void Start()
@@ -33,62 +48,67 @@ namespace ChunkSystem
             }
         }
 
-        private void OnEnable()
+        private void OnDestroy()
         {
-            foreach (var chunkListener in _chunkListeners)
+            var chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>();
+            foreach (var chunkListener in chunkListeners)
             {
-                onChunkCreated.AddListener(chunkListener.ChunkCreatedHandler);
-                onChunkEnabled.AddListener(chunkListener.ChunkEnabledHandler);
-                onChunkDisabled.AddListener(chunkListener.ChunkDisabledHandler);
-            }
-
-            foreach (var agent in _agents)
-            {
-                agent.StateChanged += OnAgentStateChanged;
-                agent.OutOfChunk += OnAgentOutOfChunk;
-            }
-        }
-
-        private void OnDisable()
-        {
-            foreach (var chunkListener in _chunkListeners)
-            {
-                onChunkCreated.RemoveListener(chunkListener.ChunkCreatedHandler);
-                onChunkEnabled.RemoveListener(chunkListener.ChunkEnabledHandler);
-                onChunkDisabled.RemoveListener(chunkListener.ChunkDisabledHandler);
-            }
-
-            foreach (var agent in _agents)
-            {
-                agent.StateChanged -= OnAgentStateChanged;
-                agent.OutOfChunk -= OnAgentOutOfChunk;
+                RemoveChunkListener(chunkListener);
             }
         }
 
         private void OnDrawGizmos()
         {
-            foreach (var chunk in _chunks)
+            foreach (var chunk in Chunks)
             {
                 Gizmos.color = chunk.Active ? Color.green : Color.red;
                 Gizmos.DrawWireCube(chunk.Position, chunkSize * (chunk.Active ? .9f : 1));
             }
+
+            if (Application.isPlaying) return;
+
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireCube(transform.position, chunkSize);
+        }
+
+        #region Chunk
+
+        public void Initialize(Vector3 position)
+        {
+            if (IsActive) return;
+            CreateChunkAt(position);
         }
 
         private Chunk CreateChunkAt(Vector3 position)
         {
             var newChunk = new Chunk(position, chunkSize);
-            _chunks.Add(newChunk);
-            onChunkCreated?.Invoke(newChunk.bounds);
+            Chunks.Add(newChunk);
+            onChunkCreated?.Invoke(newChunk.Bounds);
             return newChunk;
         }
 
+        [ContextMenu("Initialize Chunk")]
+        public void InitializeChunk()
+        {
+            Initialize(Vector3.zero);
+        }
+
+        #endregion
+
+        #region Agent
+
         private void AddAgentToChunk(ChunkAgent agent, Chunk chunk)
         {
+            if(chunk.Agents.Contains(agent))
+            {
+                return;
+            }
+            
             agent.Chunk = chunk;
             chunk.AddAgent(agent, out var chunkEnabled);
             if (chunkEnabled)
             {
-                onChunkEnabled?.Invoke(agent.Chunk.bounds);
+                onChunkEnabled?.Invoke(chunk.Bounds);
             }
         }
 
@@ -97,15 +117,42 @@ namespace ChunkSystem
             agent.Chunk.RemoveAgent(agent, out var chunkDisabled);
             if (chunkDisabled)
             {
-                onChunkDisabled?.Invoke(agent.Chunk.bounds);
+                onChunkDisabled?.Invoke(agent.Chunk.Bounds);
             }
         }
 
-        private void OnAgentStateChanged(ChunkAgent agent)
+        public void AgentStarted(ChunkAgent agent)
+        {
+            if (Agents.Contains(agent))
+            {
+                return;
+            }
+
+            if (!IsActive)
+            {
+                Initialize(agent.transform.position);
+            }
+
+            Agents.Add(agent);
+            AddAgentToChunk(agent, agent.Chunk ?? Chunks.First());
+        }
+
+        public void AgentDestroyed(ChunkAgent agent)
+        {
+            Agents.Remove(agent);
+            RemoveAgentFromChunk(agent);
+        }
+
+        public void AgentEnabledStateChanged(ChunkAgent agent)
         {
             if (agent.gameObject.activeSelf && agent.enabled)
             {
-                AddAgentToChunk(agent, agent.Chunk ?? _chunks[0]);
+                if (!IsActive)
+                {
+                    Initialize(agent.transform.position);
+                }
+
+                AddAgentToChunk(agent, agent.Chunk ?? Chunks.First());
             }
             else
             {
@@ -113,94 +160,51 @@ namespace ChunkSystem
             }
         }
 
-        private void OnAgentOutOfChunk(ChunkAgent agent)
+        public void AgentOutOfChunk(ChunkAgent agent)
         {
             RemoveAgentFromChunk(agent);
 
-            var exit = agent.transform.position - agent.Chunk.Position;
-            var x = chunkSize.x * .5f - Mathf.Abs(exit.x);
-            var y = chunkSize.y * .5f - Mathf.Abs(exit.y);
-            var z = chunkSize.z * .5f - Mathf.Abs(exit.z);
-
-            Vector3 nextChunkPosition;
+            var exit = agent.Chunk.Bounds.GetExitFace(agent.transform.position);
             
-            if (x < y && x < z)
-            {
-                nextChunkPosition = agent.Chunk.Position + new Vector3(Mathf.Sign(exit.x), 0, 0) * chunkSize.x;
-            }
-            else if (y < x && y < z)
-            {
-                nextChunkPosition = agent.Chunk.Position + new Vector3(0, Mathf.Sign(exit.y), 0) * chunkSize.y;
-            }
-            else
-            {
-                nextChunkPosition = agent.Chunk.Position + new Vector3(0, 0, Mathf.Sign(exit.z)) * chunkSize.z;
-            }
+            var nextChunkPosition = agent.Chunk.Position +
+                                    new Vector3(exit.x * chunkSize.x, exit.y * chunkSize.y, exit.z * chunkSize.z);
 
-            var chunkExist = _chunks.Find(chunk => chunk.Position == nextChunkPosition);
+            var nextChunk = Chunks.FirstOrDefault(chunk => chunk.Position == nextChunkPosition) ??
+                             CreateChunkAt(nextChunkPosition);
 
-            if (chunkExist != null)
-            {
-                AddAgentToChunk(agent, chunkExist);
-            }
-            else
-            {
-                var newChunk = CreateChunkAt(nextChunkPosition);
-                AddAgentToChunk(agent, newChunk);
-            }
+            AddAgentToChunk(agent, nextChunk);
         }
 
-        [ContextMenu("Initialize Chunk")]
-        public void InitializeChunk()
-        {
-            Initialize(Vector3.zero);
-        }
-        
-        public void Initialize(Vector3 position)
-        {
-            if (IsActive) return;
-            _chunks = new List<Chunk>();
-            CreateChunkAt(position);
-        }
+        #endregion
 
-        public void RegisterNewAgent(ChunkAgent agent)
-        {
-            if (_agents.Contains(agent)) return;
+        #region Chunk Handlers
 
-            if (!IsActive)
+        public void AddChunkListener(IListenChunk chunkListener)
+        {
+            if (ChunkListeners.Contains(chunkListener))
             {
-                Initialize(agent.transform.position);
+                return;
             }
 
-            _agents.Add(agent);
-            agent.StateChanged += OnAgentStateChanged;
-            agent.OutOfChunk += OnAgentOutOfChunk;
-            AddAgentToChunk(agent, agent.Chunk ?? _chunks[0]);
+            ChunkListeners.Add(chunkListener);
+            onChunkCreated.AddListener(chunkListener.ChunkCreatedHandler);
+            onChunkEnabled.AddListener(chunkListener.ChunkEnabledHandler);
+            onChunkDisabled.AddListener(chunkListener.ChunkDisabledHandler);
         }
 
-        public void UnRegisterAgent(ChunkAgent agent)
+        public void RemoveChunkListener(IListenChunk chunkListener)
         {
-            _agents.Remove(agent);
+            if (!ChunkListeners.Contains(chunkListener))
+            {
+                return;
+            }
 
-            agent.StateChanged -= OnAgentStateChanged;
-            agent.OutOfChunk -= OnAgentOutOfChunk;
-            RemoveAgentFromChunk(agent);
+            ChunkListeners.Remove(chunkListener);
+            onChunkCreated.RemoveListener(chunkListener.ChunkCreatedHandler);
+            onChunkEnabled.RemoveListener(chunkListener.ChunkEnabledHandler);
+            onChunkDisabled.RemoveListener(chunkListener.ChunkDisabledHandler);
         }
 
-        public void AddChunkHandler(IListenChunk chunkHandler)
-        {
-            _chunkListeners.Add(chunkHandler);
-            onChunkCreated.AddListener(chunkHandler.ChunkCreatedHandler);
-            onChunkEnabled.AddListener(chunkHandler.ChunkEnabledHandler);
-            onChunkDisabled.AddListener(chunkHandler.ChunkDisabledHandler);
-        }
-
-        public void RemoveChunkHandler(IListenChunk chunkHandler)
-        {
-            _chunkListeners.Remove(chunkHandler);
-            onChunkCreated.RemoveListener(chunkHandler.ChunkCreatedHandler);
-            onChunkEnabled.RemoveListener(chunkHandler.ChunkEnabledHandler);
-            onChunkDisabled.RemoveListener(chunkHandler.ChunkDisabledHandler);
-        }
+        #endregion
     }
 }
