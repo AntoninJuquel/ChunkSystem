@@ -1,11 +1,9 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ChunkSystem
 {
-    public interface IHandleChunk
+    public interface IListenChunk
     {
-        public event Action<Vector2> ChunkStarted;
         void ChunkCreatedHandler(Bounds bounds);
         void ChunkDisabledHandler(Bounds bounds);
         void ChunkEnabledHandler(Bounds bounds);

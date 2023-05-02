@@ -44,6 +44,16 @@ namespace ChunkSystem
             StateChanged?.Invoke(this);
         }
 
+        private void OnDestroy()
+        {
+            if (!ChunkManager.Instance)
+            {
+                return;
+            }
+
+            ChunkManager.Instance.UnRegisterAgent(this);
+        }
+
         private IEnumerator CheckChunkBounds()
         {
             yield return WaitWhileInChunk;
