@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace ChunkSystem
@@ -34,9 +35,37 @@ namespace ChunkSystem
                 _extensions[i].position = transform.position + extensions[i].offset;
             }
         }
+        private void OnEnable()
+        {
+            if (_extensions == null)
+            {
+                return;
+            }
 
+            foreach (var extension in _extensions)
+            {
+                extension.gameObject.SetActive(true);
+            }
+        }
+        private void OnDisable()
+        {
+            if (_extensions == null)
+            {
+                return;
+            }
+
+            foreach (var extension in _extensions)
+            {
+                extension.gameObject.SetActive(false);
+            }
+        }
         private void OnDestroy()
         {
+            if (_extensions == null)
+            {
+                return;
+            }
+
             foreach (var extension in _extensions)
             {
                 Destroy(extension);
