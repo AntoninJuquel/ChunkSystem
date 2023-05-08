@@ -35,6 +35,7 @@ namespace ChunkSystem
                 _extensions[i].position = transform.position + extensions[i].offset;
             }
         }
+
         private void OnEnable()
         {
             if (_extensions == null)
@@ -47,9 +48,10 @@ namespace ChunkSystem
                 extension.gameObject.SetActive(true);
             }
         }
+
         private void OnDisable()
         {
-            if (_extensions == null)
+            if (_extensions == null || _extensions.Any(extension => extension == null))
             {
                 return;
             }
@@ -59,6 +61,7 @@ namespace ChunkSystem
                 extension.gameObject.SetActive(false);
             }
         }
+
         private void OnDestroy()
         {
             if (_extensions == null)
