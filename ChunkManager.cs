@@ -24,7 +24,7 @@ namespace ChunkSystem
 
         private void OnEnable()
         {
-            var chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>();
+            var chunkListeners = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IListenChunk>();
             foreach (var chunkListener in chunkListeners)
             {
                 AddChunkListener(chunkListener);
@@ -33,7 +33,7 @@ namespace ChunkSystem
 
         private void OnDisable()
         {
-            var chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>();
+            var chunkListeners = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IListenChunk>();
             foreach (var chunkListener in chunkListeners)
             {
                 RemoveChunkListener(chunkListener);
@@ -50,7 +50,7 @@ namespace ChunkSystem
 
         private void OnDestroy()
         {
-            var chunkListeners = FindObjectsOfType<MonoBehaviour>().OfType<IListenChunk>();
+            var chunkListeners = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<IListenChunk>();
             foreach (var chunkListener in chunkListeners)
             {
                 RemoveChunkListener(chunkListener);
