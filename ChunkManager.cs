@@ -145,7 +145,7 @@ namespace ChunkSystem
 
         public void AgentEnabledStateChanged(ChunkAgent agent)
         {
-            if (agent.gameObject.activeSelf && agent.enabled)
+            if (agent.gameObject.activeInHierarchy && agent.enabled)
             {
                 if (!IsActive)
                 {
